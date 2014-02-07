@@ -66,7 +66,9 @@ __version__ = "v0.7.0"
 from request import set_key, Request
 from util import Datapoint, Datalist, Datadict, Element, NameRepr, SearchRepr
 from pager import PagedRequest
-from locales import get_locale, set_locale
+from locales import get_locale, set_locale, \
+                    Country as _Country, \
+                    Language as _Language
 from tmdb_auth import get_session, set_session
 from tmdb_exceptions import *
 
@@ -87,12 +89,42 @@ def process_date(datestr):
         import traceback
         _,_,tb = sys.exc_info()
         f,l,_,_ = traceback.extract_tb(tb)[-1]
-        warnings.warn_explicit(('"{0}" is not a supported date format. ' +
-                                'Please fix upstream data at ' +
-                                'http://www.themoviedb.org.'
-                               ).format(datestr), Warning, f, l)
+        warnings.warn_explicit((u'"{0}" is not a supported date format. ' +
+                                u'Please fix upstream data at ' +
+                                u'http://www.themoviedb.org.'
+                ).format(datestr).encode(get_locale().encoding), Warning, f, l)
         return None
 
+def process_language(language):
+    try:
+        return _Language.getstored(language.lower())
+    except TMDBLocaleError:
+        import sys
+        import warnings
+        import traceback
+        _,_,tb = sys.exc_info()
+        print traceback.extract_tb(tb)
+        f,l,_,_ = traceback.extract_tb(tb)[-1]
+        warnings.warn_explicit((u'"{0}" is not a supported language code. ' +
+                                u'Please fix upstream data at ' +
+                                u'http://www.themoviedb.org.'
+                ).format(language).encode(get_locale().encoding), Warning, f, l)
+        return None
+
+def process_country(country):
+    try:
+        return _Country.getstored(country.upper())
+    except TMDBLocaleError:
+        import sys
+        import warnings
+        import traceback
+        _,_,tb = sys.exc_info()
+        f,l,_,_ = traceback.extract_tb(tb)[-1]
+        warnings.warn_explicit((u'"{0}" is not a supported country code. ' +
+                                u'Please fix upstream data at ' +
+                                u'http://www.themoviedb.org.'
+                ).format(country).encode(get_locale().encoding), Warning, f, l)
+        return None
 
 class Configuration(Element):
     images = Datapoint('images')
@@ -107,10 +139,10 @@ class Account(NameRepr, Element):
     def _populate(self):
         return Request('account', session_id=self._session.sessionid)
 
-    id = Datapoint('id')
+    id = Datapoint('id', handler=int)
     adult = Datapoint('include_adult')
-    country = Datapoint('iso_3166_1')
-    language = Datapoint('iso_639_1')
+    country = Datapoint('iso_3166_1', handler=process_country)
+    language = Datapoint('iso_639_1', handler=process_language)
     name = Datapoint('name')
     username = Datapoint('username')
 
@@ -229,12 +261,12 @@ class CollectionSearchResult(SearchRepr, PagedRequest):
 class Image(Element):
     filename = Datapoint('file_path', initarg=1,
                          handler=lambda x: x.lstrip('/'))
-    aspectratio = Datapoint('aspect_ratio')
-    height = Datapoint('height')
-    width = Datapoint('width')
-    language = Datapoint('iso_639_1')
-    userrating = Datapoint('vote_average')
-    votes = Datapoint('vote_count') 
+    aspectratio = Datapoint('aspect_ratio', handler=float)
+    height = Datapoint('height', handler=int)
+    width = Datapoint('width', handler=int)
+    language = Datapoint('iso_639_1', handler=process_language)
+    userrating = Datapoint('vote_average', handler=float)
+    votes = Datapoint('vote_count', handler=int) 
 
     def sizes(self):
         return ['original']
@@ -296,7 +328,7 @@ class Logo(Image):
 
 
 class AlternateTitle(Element):
-    country     = Datapoint('iso_3166_1')
+    country     = Datapoint('iso_3166_1', handler=process_country)
     title       = Datapoint('title')
 
     # sort preferring locale's country, but keep remaining ordering consistent
@@ -317,7 +349,7 @@ class AlternateTitle(Element):
 
 
 class Person(Element):
-    id = Datapoint('id', initarg=1)
+    id = Datapoint('id', initarg=1, handler=int)
     name = Datapoint('name')
     biography = Datapoint('biography')
     dayofbirth = Datapoint('birthday', default=None, handler=process_date)
@@ -351,7 +383,7 @@ class Person(Element):
 
 class Cast(Person):
     character = Datapoint('character')
-    order = Datapoint('order')
+    order = Datapoint('order', handler=int)
 
     def __repr__(self):
         return u"<{0.__class__.__name__} '{0.name}' as '{0.character}'>"\
@@ -368,7 +400,7 @@ class Crew(Person):
 
 
 class Keyword(Element):
-    id   = Datapoint('id')
+    id   = Datapoint('id', handler=int)
     name = Datapoint('name')
 
     def __repr__(self):
@@ -378,8 +410,8 @@ class Keyword(Element):
 
 class Release(Element):
     certification = Datapoint('certification')
-    country = Datapoint('iso_3166_1')
-    releasedate = Datapoint('release_date', handler=process_date)
+    country = Datapoint('iso_3166_1', handler=process_country)
+    releasedate = Datapoint('release_date', default=None, handler=process_date)
     def __repr__(self):
         return u"<{0.__class__.__name__} {0.country}, {0.releasedate}>"\
                .format(self).encode('utf-8')
@@ -421,7 +453,7 @@ class AppleTrailer(Element):
 
 class Translation(Element):
     name = Datapoint('name')
-    language = Datapoint('iso_639_1')
+    language = Datapoint('iso_639_1', handler=process_language)
     englishname = Datapoint('english_name')
 
     def __repr__(self):
@@ -430,7 +462,7 @@ class Translation(Element):
 
 
 class Genre(NameRepr, Element):
-    id = Datapoint('id')
+    id = Datapoint('id', handler=int)
     name = Datapoint('name')
 
     def _populate_movies(self):
@@ -457,7 +489,7 @@ class Genre(NameRepr, Element):
         
 
 class Studio(NameRepr, Element):
-    id = Datapoint('id', initarg=1)
+    id = Datapoint('id', initarg=1, handler=int)
     name = Datapoint('name')
     description = Datapoint('description')
     headquarters = Datapoint('headquarters')
@@ -485,12 +517,12 @@ class Studio(NameRepr, Element):
 
 
 class Country(NameRepr, Element):
-    code = Datapoint('iso_3166_1')
+    code = Datapoint('iso_3166_1', handler=process_country)
     name = Datapoint('name')
 
 
 class Language(NameRepr, Element):
-    code = Datapoint('iso_639_1')
+    code = Datapoint('iso_639_1', handler=process_language)
     name = Datapoint('name')
 
 
@@ -573,15 +605,15 @@ class Movie(Element):
         movie._populate()
         return movie
 
-    id = Datapoint('id', initarg=1)
+    id = Datapoint('id', initarg=1, handler=int)
     title = Datapoint('title')
     originaltitle = Datapoint('original_title')
     tagline = Datapoint('tagline')
     overview = Datapoint('overview')
-    runtime = Datapoint('runtime')
-    budget = Datapoint('budget')
-    revenue = Datapoint('revenue')
-    releasedate = Datapoint('release_date', handler=process_date)
+    runtime = Datapoint('runtime', handler=int)
+    budget = Datapoint('budget', handler=int)
+    revenue = Datapoint('revenue', handler=int)
+    releasedate = Datapoint('release_date', default=None, handler=process_date)
     homepage = Datapoint('homepage')
     imdb = Datapoint('imdb_id')
 
@@ -590,9 +622,9 @@ class Movie(Element):
     poster = Datapoint('poster_path', handler=Poster,
                        raw=False, default=None)
 
-    popularity = Datapoint('popularity')
-    userrating = Datapoint('vote_average')
-    votes = Datapoint('vote_count')
+    popularity = Datapoint('popularity', handler=int)
+    userrating = Datapoint('vote_average', handler=float)
+    votes = Datapoint('vote_count', handler=int)
 
     adult = Datapoint('adult')
     collection = Datapoint('belongs_to_collection', handler=lambda x: \
@@ -736,7 +768,7 @@ class ReverseCrew( Movie ):
 
 
 class Collection(NameRepr, Element):
-    id = Datapoint('id', initarg=1)
+    id = Datapoint('id', initarg=1, handler=int)
     name = Datapoint('name')
     backdrop = Datapoint('backdrop_path', handler=Backdrop, \
                          raw=False, default=None)
@@ -760,13 +792,13 @@ class Collection(NameRepr, Element):
                        poller=_populate_images, sort=True)
 
 class List(NameRepr, Element):
-    id = Datapoint('id', initarg=1)
+    id = Datapoint('id', initarg=1, handler=int)
     name = Datapoint('name')
     author = Datapoint('created_by')
     description = Datapoint('description')
     favorites = Datapoint('favorite_count')
-    language = Datapoint('iso_639_1')
-    count = Datapoint('item_count')
+    language = Datapoint('iso_639_1', handler=process_language)
+    count = Datapoint('item_count', handler=int)
     poster = Datapoint('poster_path', handler=Poster, raw=False, default=None)
     members = Datalist('items', handler=Movie)
 
@@ -774,19 +806,19 @@ class List(NameRepr, Element):
         return Request('list/{0}'.format(self.id))
 
 class Network(NameRepr,Element):
-    id = Datapoint('id', initarg=1)
+    id = Datapoint('id', initarg=1, handler=int)
     name = Datapoint('name')
 
 class Episode(NameRepr, Element):
-    episode_number = Datapoint('episode_number', initarg=3)
-    season_number = Datapoint('season_number', initarg=2)
-    series_id = Datapoint('series_id', initarg=1)
-    air_date = Datapoint('air_date', handler=process_date)
+    episode_number = Datapoint('episode_number', initarg=3, handler=int)
+    season_number = Datapoint('season_number', initarg=2, handler=int)
+    series_id = Datapoint('series_id', initarg=1, handler=int)
+    air_date = Datapoint('air_date', default=None, handler=process_date)
     overview = Datapoint('overview')
     name = Datapoint('name')
-    userrating = Datapoint('vote_average')
-    votes = Datapoint('vote_count')
-    id = Datapoint('id')
+    userrating = Datapoint('vote_average', handler=float)
+    votes = Datapoint('vote_count', handler=int)
+    id = Datapoint('id', handler=int)
     production_code = Datapoint('production_code')
     still = Datapoint('still_path', handler=Backdrop, raw=False, default=None)
 
@@ -823,10 +855,10 @@ class Episode(NameRepr, Element):
     stills = Datalist('stills', handler=Backdrop, poller=_populate_images, sort=True)
 
 class Season(NameRepr, Element):
-    season_number = Datapoint('season_number', initarg=2)
-    series_id = Datapoint('series_id', initarg=1)
-    id = Datapoint('id')
-    air_date = Datapoint('air_date', handler=process_date)
+    season_number = Datapoint('season_number', initarg=2, handler=int)
+    series_id = Datapoint('series_id', initarg=1, handler=int)
+    id = Datapoint('id', handler=int)
+    air_date = Datapoint('air_date', default=None, handler=process_date)
     poster = Datapoint('poster_path', handler=Poster, raw=False, default=None)
     overview = Datapoint('overview')
     name = Datapoint('name')
@@ -855,26 +887,26 @@ class Season(NameRepr, Element):
     tvrage_id = Datapoint('tvrage_id', poller=_populate_external_ids)
 
 class Series(NameRepr, Element):
-    id = Datapoint('id', initarg=1)
+    id = Datapoint('id', initarg=1, handler=int)
     backdrop = Datapoint('backdrop_path', handler=Backdrop, raw=False, default=None)
     authors = Datalist('created_by', handler=Person)
-    episode_run_times = Datalist('episode_run_time')
-    first_air_date = Datapoint('first_air_date', handler=process_date)
-    last_air_date = Datapoint('last_air_date', handler=process_date)
+    episode_run_times = Datalist('episode_run_time', handler=int)
+    first_air_date = Datapoint('first_air_date', default=None, handler=process_date)
+    last_air_date = Datapoint('last_air_date', default=None, handler=process_date)
     genres = Datalist('genres', handler=Genre)
     homepage = Datapoint('homepage')
     in_production = Datapoint('in_production')
-    languages = Datalist('languages')
+    languages = Datalist('languages', handler=process_language)
     origin_countries = Datalist('origin_country')
     name = Datapoint('name')
     original_name = Datapoint('original_name')
-    number_of_episodes = Datapoint('number_of_episodes')
-    number_of_seasons = Datapoint('number_of_seasons')
+    number_of_episodes = Datapoint('number_of_episodes', handler=int)
+    number_of_seasons = Datapoint('number_of_seasons', handler=int)
     overview = Datapoint('overview')
-    popularity = Datapoint('popularity')
+    popularity = Datapoint('popularity', handler=int)
     status = Datapoint('status')
-    userrating = Datapoint('vote_average')
-    votes = Datapoint('vote_count')
+    userrating = Datapoint('vote_average', handler=float)
+    votes = Datapoint('vote_count', handler=int)
     poster = Datapoint('poster_path', handler=Poster, raw=False, default=None)
     networks = Datalist('networks', handler=Network)
     seasons = Datadict('seasons', attr='season_number', handler=Season, passthrough={'id': 'series_id'})

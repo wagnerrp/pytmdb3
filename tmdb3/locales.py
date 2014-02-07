@@ -48,9 +48,9 @@ class LocaleBase(object):
         if key is None:
             return None
         try:
-            return cls._stored[key.lower()]
+            return cls._stored[str(key).lower()]
         except:
-            raise TMDBLocaleError("'{0}' is not a known valid {1} code."\
+            raise TMDBLocaleError(u"'{0}' is not a known valid {1} code."\
                                   .format(key, cls.__name__))
 
 
