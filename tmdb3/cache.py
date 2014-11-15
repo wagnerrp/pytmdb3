@@ -16,6 +16,7 @@ from cache_engine import Engines
 import cache_null
 import cache_file
 
+DEBUG = False
 
 class Cache(object):
     """
@@ -33,12 +34,16 @@ class Cache(object):
         self._engine = None
         self._data = {}
         self._age = 0
+        self._rate_limiter = []
         self.configure(engine, *args, **kwargs)
 
     def _import(self, data=None):
         if data is None:
             data = self._engine.get(self._age)
         for obj in sorted(data, key=lambda x: x.creation):
+            self._rate_limiter.append(obj.creation)
+            if len(self._rate_limiter) > 30:
+                self._rate_limiter.pop(0)
             if not obj.expired:
                 self._data[obj.key] = obj
                 self._age = max(self._age, obj.creation)
@@ -72,6 +77,14 @@ class Cache(object):
         try:
             return self._data[key].data
         except:
+            # no cache data, so we're going to query
+            # wait to ensure proper rate limiting
+            if len(self._rate_limiter) == 30:
+                w = 10 - (time.time() - self._rate_limiter.pop(0))
+                if (w > 0):
+                    if DEBUG:
+                        print "rate limiting - waiting {0} seconds".format(w)
+                    time.sleep(w)
             return None
 
     def cached(self, callback):

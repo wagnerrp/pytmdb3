@@ -22,7 +22,7 @@ for search and retrieval of text metadata and image URLs from TMDB.
 Preliminary API specifications can be found at
 http://help.themoviedb.org/kb/api/about-3"""
 
-__version__ = "v0.7.0"
+__version__ = "v0.7.1"
 # 0.1.0  Initial development
 # 0.2.0  Add caching mechanism for API queries
 # 0.2.1  Temporary work around for broken search paging
@@ -62,6 +62,7 @@ __version__ = "v0.7.0"
 # 0.6.17 Add userrating/votes to Image, add overview to Collection, remove 
 #           releasedate sorting from Collection Movies
 # 0.7.0  Add support for television series data
+# 0.7.1  Add rate limiter to cache engine
 
 from request import set_key, Request
 from util import Datapoint, Datalist, Datadict, Element, NameRepr, SearchRepr
