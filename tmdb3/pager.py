@@ -22,7 +22,10 @@ class PagedIterator(Iterator):
         self._index += 1
         if self._index == self._len:
             raise StopIteration
-        return self._parent[self._index]
+        try:
+            return self._parent[self._index]
+        except IndexError:
+            raise StopIteration
 
 
 class UnpagedData(object):
