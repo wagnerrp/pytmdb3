@@ -908,3 +908,14 @@ class Series(NameRepr, Element):
     freebase_mid = Datapoint('freebase_mid', poller=_populate_external_ids)
     tvdb_id = Datapoint('tvdb_id', poller=_populate_external_ids)
     tvrage_id = Datapoint('tvrage_id', poller=_populate_external_ids)
+
+    def getSimilar(self):
+        return self.similar
+
+    @property
+    def similar(self):
+        res = SeriesSearchResult(Request(
+                                 'tv/{0}/similar'.format(self.id)),
+                                 locale=self._locale)
+        res._name = 'Similar to {0.name}'.format(self)
+        return res
