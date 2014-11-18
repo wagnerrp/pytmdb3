@@ -693,7 +693,7 @@ class Movie(Element):
         res = MovieSearchResult(Request(
                                  'movie/{0}/similar_movies'.format(self.id)),
                                  locale=self._locale)
-        res._name = 'Similar to {0}'.format(self._printable_name())
+        res._name = u'Similar to {0}'.format(self._printable_name())
         return res
 
     @property
@@ -917,5 +917,5 @@ class Series(NameRepr, Element):
         res = SeriesSearchResult(Request(
                                  'tv/{0}/similar'.format(self.id)),
                                  locale=self._locale)
-        res._name = 'Similar to {0.name}'.format(self)
+        res._name = u'Similar to {0.name}'.format(self)
         return res
