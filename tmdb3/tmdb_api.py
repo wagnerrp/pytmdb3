@@ -243,7 +243,7 @@ class Image(Element):
         if size not in self.sizes():
             raise TMDBImageSizeError
         url = Configuration.images['base_url'].rstrip('/')
-        return url+'/{0}/{1}'.format(size, self.filename)
+        return url+u'/{0}/{1}'.format(size, self.filename)
 
     # sort preferring locale's language, but keep remaining ordering consistent
     def __lt__(self, other):
@@ -442,7 +442,7 @@ class Genre(NameRepr, Element):
         if 'movies' not in self._data:
             search = MovieSearchResult(self._populate_movies(), \
                                        locale=self._locale)
-            search._name = "{0.name} Movies".format(self)
+            search._name = u"{0.name} Movies".format(self)
             self._data['movies'] = search
         return self._data['movies']
 
@@ -479,7 +479,7 @@ class Studio(NameRepr, Element):
         if 'movies' not in self._data:
             search = MovieSearchResult(self._populate_movies(),
                                        locale=self._locale)
-            search._name = "{0.name} Movies".format(self)
+            search._name = u"{0.name} Movies".format(self)
             self._data['movies'] = search
         return self._data['movies']
 
