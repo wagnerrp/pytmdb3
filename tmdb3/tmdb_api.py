@@ -244,7 +244,7 @@ class Image(Element):
         if size not in self.sizes():
             raise TMDBImageSizeError
         url = Configuration.images['base_url'].rstrip('/')
-        return url+'/{0}/{1}'.format(size, self.filename)
+        return url+u'/{0}/{1}'.format(size, self.filename)
 
     # sort preferring locale's language, but keep remaining ordering consistent
     def __lt__(self, other):
@@ -443,7 +443,7 @@ class Genre(NameRepr, Element):
         if 'movies' not in self._data:
             search = MovieSearchResult(self._populate_movies(), \
                                        locale=self._locale)
-            search._name = "{0.name} Movies".format(self)
+            search._name = u"{0.name} Movies".format(self)
             self._data['movies'] = search
         return self._data['movies']
 
@@ -480,7 +480,7 @@ class Studio(NameRepr, Element):
         if 'movies' not in self._data:
             search = MovieSearchResult(self._populate_movies(),
                                        locale=self._locale)
-            search._name = "{0.name} Movies".format(self)
+            search._name = u"{0.name} Movies".format(self)
             self._data['movies'] = search
         return self._data['movies']
 
@@ -896,6 +896,9 @@ class Series(NameRepr, Element):
     def _populate_external_ids(self):
         return Request('tv/{0}/external_ids'.format(self.id))
 
+    def _populate_keywords(self):
+        return Request('tv/{0}/keywords'.format(self.id))
+
     cast = Datalist('cast', handler=Cast,
                     poller=_populate_cast, sort='order')
     crew = Datalist('crew', handler=Crew, poller=_populate_cast)
@@ -903,6 +906,8 @@ class Series(NameRepr, Element):
                          poller=_populate_images, sort=True)
     posters = Datalist('posters', handler=Poster,
                        poller=_populate_images, sort=True)
+    keywords = Datalist('results', handler=Keyword,
+                    poller=_populate_keywords)
 
     imdb_id = Datapoint('imdb_id', poller=_populate_external_ids)
     freebase_id = Datapoint('freebase_id', poller=_populate_external_ids)
