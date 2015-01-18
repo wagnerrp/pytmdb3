@@ -6,12 +6,12 @@ except ImportError:
     from distutils.core import setup
 
 
-with open('README') as f:
+with open('README.md') as f:
     long_description = f.read()
 
 setup(
     name='tmdb3',
-    version='0.7.1',
+    version='0.7.2',
     description='TheMovieDB.org APIv3 interface',
     long_description=long_description,
     author='Raymond Wagner',

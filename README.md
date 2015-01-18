@@ -22,8 +22,9 @@ Caching Engine
 
 In order to limit excessive usage against the online API server, the PyTMDB3
 module supports caching of requests. Cached data is keyed off the request URL,
-and is currently stored for one hour. This may get tuned further as the v3
-API gets increased usage, and official limits are set per host.
+and is currently stored for one hour. API requests are limited to thirty (30)
+within ten (10) seconds. Requests beyond this limit are blocking until they
+can be processed.
 
 There are currently two engines available for use. The `null` engine merely
 discards all information, and is only intended for debugging use. The `file`
@@ -303,6 +304,8 @@ List of Available Data
 |  list(Crew)           | crew               |
 |  list(Backdrop)       | backdrops          |
 |  list(Poster)         | posters            |
+|  list(Series)         | similar            |
+|  list(Keyword)        | keywords           |
 
 #### Season:
 |  type                 | name               |

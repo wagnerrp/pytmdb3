@@ -5,4 +5,6 @@
 # Python stuff #
 ################
 build
+dist
+tmdb3.egg-info
 *.pyc
